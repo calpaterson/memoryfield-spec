@@ -30,25 +30,38 @@ data and can be regenerated at any time.
 ### Container
 
 - memoryfields MUST be flat directories
-  - they MUST contain one or more "pages" ended in `.md`
-  - they MUST NOT include sub directories
-  - they MAY include non-markdown files (such as images, or videos that add extra context)
+    - they MUST contain one or more "page" files ending in `.md`
+    - they MUST NOT include sub directories with pages inside
+      - they MAY include sub-directories for other reasons
+        - Implementations MUST NOT index such sub-directories
+    - they MAY include non-markdown files (such as images, or videos that add extra context)
 - if served as a single archive, they MUST be a valid ZIP file
-  - the archive SHOULD use the `.memoryfield.zip` extension
-  - and MAY be served over HTTP with `Content-Type: application/zip`
+    - the archive SHOULD use the `.memoryfield.zip` extension
+    - and MAY be served over HTTP with `Content-Type: application/zip`
 
 ### Pages
 
+Pages contain prose describing a topic.
+
 - Pages MUST be UTF-8 encoded Markdown with the `.md` file extension
-- Pages MUST have a filename that is a URL-safe sluf, such as `carbon-fibre.md`
-  - Pages SHOULD use `-` in preference to ` ` or `_` to separate words in the filename
-- PAges SHOULD include a YAML frontmatter block at the start of the file
+- Page filenames MUST consist only of ASCII lowercase letters, digits, and
+  hyphens, and MUST begin and end with a letter or digit, such as
+  `carbon-fibre.md`
+    - Pages SHOULD use `-` in preference to ` ` or `_` to separate words in the filename
+- Pages SHOULD include a YAML frontmatter block at the start of the file
+- Pages SHOULD include comprehensive sources and citations
+    - This is to allow for later confirmation of facts, reflowing, splitting and
+      other editing of pages without information loss
 
 #### Frontmatter
 
-The following frontmatter fields are defined.  Implementions MUST NOT rely on
-the presence of these fields nor even the prescence of frontmatter at all.
-Markdown files without frontmatter are valid pages.
+The following frontmatter fields are defined.
+
+Implementions MUST NOT rely on the presence of these fields nor even the
+prescence of frontmatter at all.  Pages without frontmatter are valid pages.
+
+Implementations MUST NOT raise errors on the presence of frontmatter fields
+other than those described below.
 
 | Field     | Requirement | Description                                        |
 |-----------|-------------|----------------------------------------------------|
@@ -75,14 +88,20 @@ Carbon fibre woks conduct heat unevenly but...
 #### Page length
 
 - Pages SHOULD NOT exceed 8192 bytes
-- Pages MAY exceed this limit, but index implementations are not required to handle more than the first 8,192 bytes
+- Pages MAY exceed this limit, but index implementations are not required to
+  handle more than the first 8,192 bytes
 
 ### Index (non-vector) file (`index.md`)
 
 - The memoryfield MAY contain an `index.md` file
-- If present, `index.md` SHOULD contain a listing of files within the memoryfield
-  - This is to aid file enumeration over transports (like HTTP) that don't offer that feature
-- The `index.md` MAY include a broader introduction to the theme and content of the memoryfield
+- The `index.md` MAY include a broad introduction to the theme and content of the memoryfield
+- The `index.md` file MUST NOT contain or comprise a catalogue of pages present in the memoryfield
+    - Indexes are commonly read by agents and should not bulk insert the titles
+      of all pages into the current context window
+    - The memoryfield MAY include a `listing.md` to provide such a catalogue of
+      pages and their titles/subjects/etc.
+          - This is to allow for page enumeration over transports that do not
+            otherwise support this (eg: some HTTP servers)
 
 ### Vector index files
 
@@ -91,17 +110,22 @@ Carbon fibre woks conduct heat unevenly but...
   - vector index filenames MUST begin with the full code of the embedding model
     - eg: `nomic-embed-text-v1.5.sqlite3`
 - memoryfields MAY support other models
-- When embedding a page for the vector index, the whole of the page MUST be used as embedding input
-  - Implementations embedding pages MAY truncate the file for embedding purposes if it exceeds 8,192 bytes
+- When embedding a page for the vector index, the embedding input MUST be the
+  complete UTF-8 contents of the .md file, including frontmatter, without
+  modification
+  - Implementations embedding pages MAY truncate the file for embedding
+    purposes if it exceeds 8,192 bytes
 - Vector index files MAY be in any format
   - sqlite3 is suggested
+  - Vector indexes SHOULD NOT be provided in textual formats - such as csv - as
+    floats do not round-trip cleanly through such formats
 
 A sample sqlite3 index schema for `nomic-embed-text-v1.5`:
 
 ```sql
 CREATE TABLE pages (
     filename TEXT PRIMARY KEY,
-    frontmatter JSONB, -- frontmatter encoded as JSON
+    frontmatter JSON, -- frontmatter encoded as JSON
     last_modified DATETIME NOT NULL, -- last modified time of the file, MAY differ from `updated`
     sha256_hash BLOB NOT NULL, -- sha256 hash of file contents
     embedding FLOAT[768] NOT NULL -- nomic-embed-text-v1.5 contains 768 weights
@@ -110,26 +134,39 @@ CREATE TABLE pages (
 
 ## Transport specific notes
 
+Memoryfiles MAY be provided over any transport, but specifically supported transports are:
+
+- Local files
+- HTTP(S)
+- Git
+- Amazon S3-compatible object stores
+- Syncthing and Dropbox
+
 ### HTTP
 
 - A memoryfield MAY be served over HTTP instead of distributed as a solid zip file
 - The HTTP server MUST serve `index.md` as `/` if it does not natively offer directory listing
 - The HTTP server SHOULD support `GET /memoryfield.zip` returning the entire dataset
-- The HTTP server MUST support `GET /{page_title}.md` returning individual memory files
+- The HTTP server MUST support `GET /{page_filename}.md` returning individual memory files
 - The HTTP server SHOULD suport `GET /search?p={search_terms}` returning ranked results as JSON
-- The HTTP server MAY support `PUT /{page_title}.md` for addition or update of a page
-  - If so, the server MUST regenerate all index entries for the affect file
-- If authentication is used, the HTTP server SHOULD support authentication via HTTP Basic Auth
-  - The HTTP server SHOULD NOT invent any alternative form of authentication eg
-    custom headers, cookies, etc
+- The HTTP server MAY support `PUT /{page_filename}.md` for addition or update of a page
+    - If so, the server MUST regenerate all index entries for the affect file
+- If authentication is used, the HTTP server SHOULD support authentication via
+  HTTP Basic Auth
 
 ### S3-compatible object stores
 
-...
+- Index timestamps MUST refer to the `Last-Modified` date provided by the
+  `ListObjectsV2` operation.
+- Implemenations MAY keep the vector index outside the object store
+  - In this case, implementations SHOULD describe the location of it within the
+    `index.md`
 
 ### Git
 
-...
+- Index timestamps MUST refer to the last 'commiter date' touching the file in
+  question
+  - Index timestamps MUST NOT refer to `ctime`, `atime` or `mtime`.
 
 ## Appendix A: Minimal example memory field
 
