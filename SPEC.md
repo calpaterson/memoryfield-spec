@@ -214,7 +214,7 @@ A memoryfield MAY be provided over any transport, but specifically supported tra
 - The HTTP server MUST serve `index.md` as `/` if it does not natively offer directory listing
 - The HTTP server SHOULD support `GET /memoryfield.zip` returning the entire dataset
 - The HTTP server MUST support `GET /{page_filename}.md` returning individual memory files
-- The HTTP server SHOULD support `GET /search?p={search_terms}` returning
+- The HTTP server SHOULD support `GET /search?q={search_terms}` returning
   ranked results as JSON
     - The response MUST be a JSON object containing the key `results`,
       which is an array ordered by descending relevance, or an empty array `[]`
