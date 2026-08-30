@@ -6,8 +6,7 @@ memoryfields are a vastly simpler way of giving AI agents memories.  The
 memoryfield format is based on standard file formats with wide support that
 both LLM agents and humans can easily understand.
 
-For an introduction to the format, read [Memory fields, a vastly simpler way of
-giving AI agents memories](https://calpaterson.com/memoryfields.md).
+For an introduction to the format, read [Agent memory as a file format](https://calpaterson.com/memoryfields.md).
 
 For the RFC-style specification, see [SPEC.md](SPEC.md).
 
