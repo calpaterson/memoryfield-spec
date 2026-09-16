@@ -87,7 +87,8 @@ Pages contain prose describing a topic.
 
 #### Frontmatter
 
-The following frontmatter fields are defined.
+The following frontmatter fields are defined.  Multi-word field names use
+lowercase `snake_case`, such as `status_reason`.
 
 Implementations MUST NOT rely on the presence of these fields nor even the
 presence of frontmatter at all.  Pages without frontmatter are valid pages.
@@ -95,13 +96,15 @@ presence of frontmatter at all.  Pages without frontmatter are valid pages.
 Implementations MUST NOT raise errors on the presence of frontmatter fields
 other than those described below.
 
-| Field     | Requirement | Description                                        |
-|-----------|-------------|----------------------------------------------------|
-| `title`   | SHOULD      | Human-readable title for the file                  |
-| `uuid`    | SHOULD      | An unchanging universally unique UUID for the file |
-| `summary` | MAY         | One-sentence summary for display                   |
-| `created` | SHOULD      | ISO 8601 datetime                                  |
-| `updated` | SHOULD      | ISO 8601 datetime                                  |
+| Field           | Requirement | Description                                         |
+|-----------------|-------------|-----------------------------------------------------|
+| `title`         | SHOULD      | Human-readable title for the file                   |
+| `uuid`          | SHOULD      | An unchanging universally unique UUID for the file  |
+| `summary`       | MAY         | One-sentence summary for display                    |
+| `created`       | SHOULD      | ISO 8601 datetime                                   |
+| `updated`       | SHOULD      | ISO 8601 datetime                                   |
+| `status`        | MAY         | Exceptional condition(s), from the vocabulary below |
+| `status_reason` | MAY         | Short explanation of why the status(es) apply       |
 
 Example:
 
@@ -119,6 +122,44 @@ Carbon fibre woks conduct heat unevenly but...
 
 Datetimes MUST be quoted strings, otherwise YAML 1.1 parsers (eg: PyYAML) will
 coerce them to datetime objects.
+
+#### Page status
+
+A page MAY carry a `status` field recording exceptional conditions about its
+conclusions.  Absence of `status` is deliberately neutral: it asserts only that
+no exceptional condition is currently being asserted, not that a page is
+established, undisputed, current, still governing, or valid.
+
+- `status` MAY contain a sequence of one or more of the following values:
+    - `provisional` - still unsettled
+    - `disputed` - actively contested
+    - `obsolete` - no longer current
+    - `superseded` - replaced in favour of another page
+    - `refuted` - retained but now believed false or otherwise invalid
+- Producers MUST NOT use values other than those listed above.  A future
+  revision of this specification MAY add further values
+- Consumers MUST NOT reject a page because it contains an unrecognized `status`
+  value.  Consumers that rewrite a page SHOULD preserve such values, and all
+  consumers SHOULD visibly surface them without inferring or normalizing their
+  meaning
+- Multiple conditions MAY apply at once, so `status` is a sequence
+- `status_reason` MAY contain a short human-readable explanation of why the
+  listed status or statuses apply.  It does not replace supporting prose or
+  citations, and MAY name a replacement page where one exists
+
+Example:
+
+```markdown
+---
+title: Carbon Fibre Woks
+status:
+  - provisional
+  - disputed
+status_reason: The research is incomplete, and credible sources disagree.
+---
+
+Carbon fibre woks conduct heat unevenly but...
+```
 
 #### Page length
 
