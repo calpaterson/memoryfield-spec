@@ -15,7 +15,7 @@ The format prioritises being
 
 ## Status
 
-This is a draft specification, version 0.1 (2026-08), and feedback is most
+This is a draft specification, version 0.3 (2026-09), and feedback is most
 welcome.
 
 ## Requirement key words
